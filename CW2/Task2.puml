@@ -9,9 +9,9 @@ class EventsApp {
     - events: Collection<Events>
     + login(email: String, Password: String): void
     + logout(): void
-    + registerEntertainmentProvider()
-    + createEvent()
-    + searchPerformances()
+    + registerEntertainmentProvider(EPDetails: EntertainmentProvider, AuthDetails: AuthenticatingUser): S
+    + createEvent(newEvent: Event): Boolean
+    + searchPerformances(date:Date, preferences: Collection<EventType>): Collection<Performance, double>
     + viewPerformance()
     + bookPerformance()
     + editPreferences()
@@ -50,6 +50,7 @@ class Performance {
     - venueAddress: String 
     - isOutdoor: Boolean
     - isSmoking: Boolean
+    - capacity: int
     + applySponsorship(amount: double): void
 }
 
@@ -72,11 +73,13 @@ class Event {
     - title: String
     - type: EventType
     - isTicketed: Boolean
+    - performances: Collection<Performance>
+    - eventEP: String
     + getAverageRating(): double
 }
 
 interface VerificationSystem {
-    + verifyBusiness(businessNumber: String): Boolean
+    + verifyBusiness(businessNumber: String): String
 }
 
 interface PaymentSystem {
