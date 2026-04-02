@@ -28,16 +28,78 @@ public class UserController extends Controller {
   }
 
   public void login() {
-    throw new UnsupportedOperationException("login is not implemented yet.");
+    if (!checkCurrentUserIsGuest()) {return;}
+    if (password == null || password.isBlank()) {
+      throw new IllegalArgumentException("password must not be blank.");
+    }
+
+    String email = User.getEmail();
+
+    List<String> userData = readDetails(PREREGISTERED_USERS_FILE_PATH);
+    for (int i = 0; i <= userData.length; i++){
+      if (email == userData[i][0] && User.passwordMatches(userData[i][1])){
+        for (int i = 0; i <= Student.length; i++){
+          if(Student[i].email = User.getEmail() && User.passwordMatches(Student[i].password)){
+            User = Student[i];
+            return
+          }
+        }
+      }
+    }
+
+    List<String> userData = readDetails(PREREGISTERED_ADMIN_FILE_PATH);
+    for (int i = 0; i <= userData.length; i++){
+      if (email == userData[i][0] && User.passwordMatches(userData[i][1])){
+        for (int i = 0; i <= AdminStaff.length; i++){
+          if(AdminStaff[i].email = User.getEmail() && User.passwordMatches(AdminStaff[i].password)){
+            User = AdminStaff[i];
+            return
+          }
+        }
+      }
+    }
+    return;
+
+    //verify password
+    //change to Student/Admin/EP
+    //throw new UnsupportedOperationException("login is not implemented yet.");
   }
 
   public void logout() {
-    throw new UnsupportedOperationException("logout is not implemented yet.");
+    if(checkCurrentUserIsGuest()) {currentUser == null;}
+    return
+    //throw new UnsupportedOperationException("logout is not implemented yet.");
+  }
+
+  private List<String> readDetails(filePath) throws IllegalStateException {
+    Path usersFile = Path.of(filePath);
+
+    try {
+      FileTime lastModifiedTime = Files.getLastModifiedTime(usersFile);
+      long fileSize = Files.size(usersFile);
+
+      List<String> parsedRecords = Files.readAllLines(usersFile, StandardCharsets.UTF_8)
+              .stream().map(String::trim).filter(line -> !line.isEmpty() && !line.startsWith("#"))
+              .map(this::parseFacultyRecord).filter(Objects::nonNull).toList();
+
+      return parsedRecords;
+    } catch (IOException exception) {
+      throw new IllegalStateException("Unable to read user preregistration file.", exception);
+    }
   }
 
   public void registerEntertainmentProvider() {
-    throw new UnsupportedOperationException(
-        "registerEntertainmentProvider is not implemented yet.");
+    if(!checkCurrentUserIsGuest()){return;}
+    if(EPAccountAlreadyExists()){return;}
+
+    String businessRegistrationNumber;
+
+    verifyEntertainmentProvider(businessRegistrationNumber);
+
+    EntertainmentProvider.add(new EntertainmentProvider());
+    User = EntertainmentProvider[EntertainmentProvider.length-1];
+    return
+    //throw new UnsupportedOperationException("registerEntertainmentProvider is not implemented yet.");
   }
 
   private boolean EPAccountAlreadyExists(String email, String orgName, String businessNumber) {
