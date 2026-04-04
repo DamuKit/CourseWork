@@ -29,33 +29,29 @@ public class UserController extends Controller {
 
   public void login() {
     if (!checkCurrentUserIsGuest()) {return;}
+
+    Scanner inputReader = new Scanner(System.in);
+
+    String email = inputReader.nextLine("Enter email:");
+    String password = inputReader.nextLine("Enter password:");
+
     if (password == null || password.isBlank()) {
       throw new IllegalArgumentException("password must not be blank.");
     }
 
-    String email = User.getEmail();
-
     List<String> userData = readDetails(PREREGISTERED_USERS_FILE_PATH);
     for (int i = 0; i <= userData.length; i++){
-      if (email == userData[i][0] && User.passwordMatches(userData[i][1])){
-        for (int i = 0; i <= Student.length; i++){
-          if(Student[i].email = User.getEmail() && User.passwordMatches(Student[i].password)){
-            User = Student[i];
-            return
-          }
-        }
+      if (email == userData[i][0] && password == userData[i][1])){
+        Student currentUser = new Student(email, password);
+        setCurrentUser(currentUser);
       }
     }
 
     List<String> userData = readDetails(PREREGISTERED_ADMIN_FILE_PATH);
     for (int i = 0; i <= userData.length; i++){
-      if (email == userData[i][0] && User.passwordMatches(userData[i][1])){
-        for (int i = 0; i <= AdminStaff.length; i++){
-          if(AdminStaff[i].email = User.getEmail() && User.passwordMatches(AdminStaff[i].password)){
-            User = AdminStaff[i];
-            return
-          }
-        }
+      if (email == userData[i][0] && password == userData[i][1])){
+        AdminStaff currentUser = new AdminStaff(email, password);
+        setCurrentUser(currentUser);
       }
     }
     return;
@@ -66,7 +62,7 @@ public class UserController extends Controller {
   }
 
   public void logout() {
-    if(checkCurrentUserIsGuest()) {currentUser == null;}
+    if(!checkCurrentUserIsGuest()) {setCurrentUser(null);}
     return
     //throw new UnsupportedOperationException("logout is not implemented yet.");
   }
@@ -90,10 +86,15 @@ public class UserController extends Controller {
 
   public void registerEntertainmentProvider() {
     if(!checkCurrentUserIsGuest()){return;}
+
+    Scanner inputReader = new Scanner(System.in);
+
+    String password = inputReader.nextLine("Enter password:");
+    String email = inputReader.nextLine("Enter email:");
+    String businessRegistrationNumber = inputReader.nextLine("Enter your organisation name:");
+    String businessRegistrationNumber = inputReader.nextLine("Enter your business registration number:");
+
     if(EPAccountAlreadyExists()){return;}
-
-    String businessRegistrationNumber;
-
     verifyEntertainmentProvider(businessRegistrationNumber);
 
     EntertainmentProvider.add(new EntertainmentProvider());
