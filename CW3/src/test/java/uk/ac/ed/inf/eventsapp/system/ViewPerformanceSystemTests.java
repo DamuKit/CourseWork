@@ -46,7 +46,7 @@ public class ViewPerformanceSystemTests {
     EventPerformanceController controller =
         new EventPerformanceController(view, events, performances, new MockPaymentSystem());
     controller.setCurrentUser(
-        new Student("student@example.com", "secret", "Alice", 123456789, new StudentPreferences()));
+        new Student("student@ed.ac.uk", "password", "Hagan", 123456789, new StudentPreferences()));
 
     controller.viewPerformance();
 
@@ -86,17 +86,17 @@ public class ViewPerformanceSystemTests {
     events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
         LocalDateTime.of(2026, 5, 10, 19, 0), LocalDateTime.of(2026, 5, 10, 21, 0), "McEwan Hall"));
 
-    ScriptedView view = new ScriptedView("abc");
+    ScriptedView view = new ScriptedView("abc", "1");
     EventPerformanceController controller =
         new EventPerformanceController(view, events, performances, new MockPaymentSystem());
     controller.setCurrentUser(
-        new Student("student@example.com", "secret", "Alice", 123456789, new StudentPreferences()));
+        new Student("student@ed.ac.uk", "password", "Hagan", 123456789, new StudentPreferences()));
 
     controller.viewPerformance();
 
     assertEquals("ERROR: Performance ID must be a valid positive whole number.",
         view.getLastErrorMessage());
-    assertEquals(null, view.getLastDisplayedPerformance());
+    assertNotNull(view.getLastDisplayedPerformance());
   }
 
   @Test
@@ -104,16 +104,16 @@ public class ViewPerformanceSystemTests {
     events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
         LocalDateTime.of(2026, 5, 10, 19, 0), LocalDateTime.of(2026, 5, 10, 21, 0), "McEwan Hall"));
 
-    ScriptedView view = new ScriptedView("99");
+    ScriptedView view = new ScriptedView("99", "1");
     EventPerformanceController controller =
         new EventPerformanceController(view, events, performances, new MockPaymentSystem());
     controller.setCurrentUser(
-        new Student("student@example.com", "secret", "Alice", 123456789, new StudentPreferences()));
+        new Student("student@ed.ac.uk", "password", "Hagan", 123456789, new StudentPreferences()));
 
     controller.viewPerformance();
 
     assertEquals("ERROR: Performance not found.", view.getLastErrorMessage());
-    assertEquals(null, view.getLastDisplayedPerformance());
+    assertNotNull(view.getLastDisplayedPerformance());
   }
 
   private Event createEventWithPerformance(long eventId, String title, EventType type,

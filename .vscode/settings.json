@@ -10,5 +10,19 @@
   "[java]": {
     "editor.defaultFormatter": "redhat.java",
     "editor.formatOnSave": true
+  },
+  "latex-workshop.latex.outDir": "%DIR%/build/%DOCFILE%",
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.clean.subfolder.enabled": true,
+  "latex-workshop.linting.lacheck.enabled": false,
+  "latex-workshop.linting.chktex.enabled": false,
+  "latex-workshop.formatting.latex": "tex-fmt",
+  "latex-workshop.formatting.tex-fmt.path": "tex-fmt",
+  "latex-workshop.formatting.tex-fmt.args": [
+    "--nowrap"
+  ],
+  "[latex]": {
+    "editor.defaultFormatter": "James-Yu.latex-workshop",
+    "editor.formatOnSave": true
   }
 }

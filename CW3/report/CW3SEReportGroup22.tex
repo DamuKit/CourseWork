@@ -1,0 +1,214 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  citecolor=black,
+  pdftitle={CW3 SE Report Group 22}
+}
+
+\setstretch{1.08}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,leftmargin=1.6em}
+
+\title{\textbf{CW3 SE Report Group 22}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{center}
+  Anonymous submission for the SE component of Coursework 3.
+\end{center}
+
+\vspace{1em}
+
+% Keep this report anonymous:
+% - do not include names
+% - do not include UUNs
+% - do not include the declaration of work here
+
+\section{Task 1: Design Choices and Implementation Notes}
+
+\subsection{Implemented Use Cases}
+
+This submission implements the group-22 main-system use cases:
+\begin{itemize}
+  \item Log in
+  \item Log out
+  \item Register entertainment provider
+  \item Create event
+  \item Search for performances
+  \item View performance
+  \item Book performance
+  \item Edit preferences
+  \item Cancel performance
+  \item Cancel booking
+\end{itemize}
+
+\subsection{System Structure}
+
+Briefly describe the main architecture of the system. For example:
+\begin{itemize}
+  \item the main packages and their responsibilities
+  \item the role of controllers, models, view, and external/integration components
+  \item how data is currently stored during execution
+\end{itemize}
+
+\noindent
+\textbf{Write here:}
+
+\vspace{6em}
+
+\subsection{Alignment with the Provided UML}
+
+State whether the implementation matches the provided class and sequence diagrams exactly.
+If there were any points where the diagrams could not be followed directly, explain:
+\begin{itemize}
+  \item what the mismatch was
+  \item why it could not be implemented exactly as drawn
+  \item what design change was made in code
+  \item how the UML could be updated to stay consistent with the implementation
+\end{itemize}
+
+\noindent
+\textbf{Write here:}
+
+\vspace{8em}
+
+\subsection{Key Design Choices}
+
+Summarise the most important choices you made when implementing the main system. For example:
+\begin{itemize}
+  \item handling of input validation
+  \item object ownership and shared state
+  \item controller responsibilities
+  \item interaction with mock external systems
+  \item error handling strategy in the text interface
+\end{itemize}
+
+\noindent
+\textbf{Write here:}
+
+\vspace{8em}
+
+\subsection{Quality Considerations in the Implementation}
+
+Briefly mention implementation choices that support quality attributes such as security,
+privacy, or reliability. This can overlap with the later reflection, but here the focus
+should be on concrete system decisions.
+
+\noindent
+\textbf{Write here:}
+
+\vspace{8em}
+
+\section{Task 5: Reflection}
+
+% Each of the following three parts should stay within 250 words.
+% One or two paragraphs per part is enough.
+
+\subsection{Reflection on Teamwork}
+
+\noindent
+
+\textbf{The Experience}
+Our team first established a workflow using Git and GitHub with a fork-and-pull-request model.
+We also built a CI check action for coursework. For Task 1, we began by dividing the use cases across the team before any implementation.
+Once the use cases were divided, we wrote placeholder functions in all controller and model files.
+This approach enabled a unified interface and facilitated assigning specific functions to each team member based on their use cases.
+
+\textbf{Reflection on Action}
+By using placeholder functions and assigning ownership from the start, we rarely encountered merge conflicts, as we seldom modified the same files or functions simultaneously.
+This time, our engagement exceeded that of previous coursework, leading to improved output.
+We also implemented code review via pull requests, which was particularly important.
+In a complex MVC system with shared data structures and interdependent controllers, this ensured teammates understood each other's APIs and data structures before integrating changes.
+Our GitHub action CI check verified that CW3 files were modified, that all tests passed, and that the submission ZIP was built, which offers a convenient double-check after work.
+
+\textbf{Theory}
+We learned that defining function signatures early helps parallel development by reducing conflicts and forcing agreement on interfaces.
+We also learned that code review is essential in complex systems, as it helps maintain a shared understanding across the team.
+
+\textbf{Preparation}
+Next time, we will adopt a Kanban-style task board to make the flow of work more visible and surface dependencies between teammates earlier,
+rather than relying solely on ad-hoc messaging.
+
+\subsection{Reflection on the Quality of the Work and Quality Attributes}
+
+\textbf{Suggested structure:}
+\begin{itemize}
+  \item how well the different tasks were tackled
+  \item one quality attribute shown by the final system
+  \item concrete implementation or testing features that support it
+  \item what could have been improved with more time or resources
+\end{itemize}
+
+\noindent
+\textbf{Word limit: 250 words maximum}
+
+\vspace{10em}
+
+\subsection{Reflection on Tools, Agile Approaches and Practices}
+
+\textbf{Suggested structure:}
+\begin{itemize}
+  \item why each tool, practice, or agile approach was chosen
+  \item what advantages and disadvantages were observed
+  \item what worked well in practice and what did not
+  \item what would be changed next time
+\end{itemize}
+
+\noindent
+\textbf{Word limit: 250 words maximum}
+
+\vspace{2em}
+
+\subsection{Screenshots of Tools and Practices}
+
+The coursework document explicitly asks for screenshots in the tools/agile/practices reflection.
+Insert screenshots of the tools you actually used, such as issue tracking, Kanban boards,
+version control history, CI runs, or planning boards.
+
+\begin{figure}[h]
+  \centering
+  % Replace the filename below with your real screenshot.
+  \fbox{\rule{0pt}{2in}\rule{0.9\linewidth}{0pt}}
+  \caption{Screenshot placeholder 1. Replace with a real screenshot of a tool or practice used by the team.}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  % Replace the filename below with your real screenshot.
+  \fbox{\rule{0pt}{2in}\rule{0.9\linewidth}{0pt}}
+  \caption{Screenshot placeholder 2. Replace with another real screenshot if needed.}
+\end{figure}
+
+\section{Submission Checklist}
+
+Before exporting the PDF, check the following:
+\begin{itemize}
+  \item The file is named \texttt{CW3SEReportGroup22.pdf}.
+  \item The document is anonymous.
+  \item The declaration of work is not included here.
+  \item Task 1 choices are described.
+  \item All three reflection parts are included.
+  \item Each reflection part is at most 250 words.
+  \item The tools/agile section includes screenshots.
+\end{itemize}
+
+\end{document}

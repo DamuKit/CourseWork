@@ -1,0 +1,51 @@
+name: CW3 SE Report PDF
+
+on:
+  pull_request:
+    paths:
+      - "CW3/report/**"
+      - ".github/workflows/cw3-se-report.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build-report:
+    if: github.repository == 'Inf2-SEPP-CW-2026/CourseWork'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install tex-fmt
+        run: cargo install tex-fmt --locked
+
+      - name: Format LaTeX source
+        run: tex-fmt --nowrap CW3/report/CW3SEReportGroup22.tex
+
+      - uses: xu-cheng/latex-action@v3
+        with:
+          root_file: CW3SEReportGroup22.tex
+          working_directory: CW3/report
+          args: -pdf -interaction=nonstopmode -halt-on-error -output-directory=build
+
+      - name: Publish PDF to tracked path
+        run: cp CW3/report/build/CW3SEReportGroup22.pdf CW3/report/CW3SEReportGroup22.pdf
+
+      - name: Upload CW3 SE report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CW3SEReportGroup22
+          path: CW3/report/build/CW3SEReportGroup22.pdf
+          if-no-files-found: error
+
+      - name: Stage generated PDF
+        run: git add CW3/report/CW3SEReportGroup22.pdf
+
+      - uses: pre-commit-ci/lite-action@v1.1.0
+        if: always()
+        with:
+          msg: "[report] build CW3 SE report PDF"

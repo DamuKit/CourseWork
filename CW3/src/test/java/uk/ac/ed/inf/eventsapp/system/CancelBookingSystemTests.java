@@ -1,16 +1,28 @@
 package uk.ac.ed.inf.eventsapp.system;
 
-import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import external.MockPaymentSystem;
 import external.PaymentSystem;
 import uk.ac.ed.inf.eventsapp.controller.BookingController;
-import uk.ac.ed.inf.eventsapp.model.*;
+import uk.ac.ed.inf.eventsapp.model.Booking;
+import uk.ac.ed.inf.eventsapp.model.BookingStatus;
+import uk.ac.ed.inf.eventsapp.model.EntertainmentProvider;
+import uk.ac.ed.inf.eventsapp.model.Event;
+import uk.ac.ed.inf.eventsapp.model.EventType;
+import uk.ac.ed.inf.eventsapp.model.Performance;
+import uk.ac.ed.inf.eventsapp.model.PerformanceStatus;
+import uk.ac.ed.inf.eventsapp.model.Student;
+import uk.ac.ed.inf.eventsapp.model.StudentPreferences;
 
 public class CancelBookingSystemTests {
   private EntertainmentProvider provider;
@@ -21,11 +33,12 @@ public class CancelBookingSystemTests {
   private Collection<Performance> performances;
 
   @BeforeEach
+  @SuppressWarnings("unused")
   void setUp() {
     provider = new EntertainmentProvider("provider@gmail.com", "password", "EooEle", "123",
         "Provider", "This is EooEle");
     student =
-        new Student("student@ed.ac.uk", "password", "Alice", 1234567, new StudentPreferences());
+        new Student("student@ed.ac.uk", "password", "Hagan", 1234567, new StudentPreferences());
 
     Event event = new Event(1L, "Live Music", EventType.MUSIC, true, provider);
     LocalDateTime start = LocalDateTime.now().plusDays(7);
@@ -129,6 +142,8 @@ public class CancelBookingSystemTests {
 
     assertTrue(view.getErrorMessages().contains("ERROR: You can only cancel your own bookings"),
         "Student should not be able to cancel another student's booking.");
+    assertEquals("SUCCESS: Booking cancelled successfully.", view.getLastSuccessMessage(),
+        "Student should be able to retry with their own booking number.");
   }
 
   @Test
@@ -185,6 +200,31 @@ public class CancelBookingSystemTests {
         "Payment-failed booking should not be cancellable.");
   }
 
+  @Test
+  void bookingLessThan24HoursAwayCannotBeCancelled() {
+    LocalDateTime soonStart = LocalDateTime.now().plusHours(12);
+    Performance soonPerformance = new Performance(2L, soonStart, soonStart.plusHours(2),
+        List.of("Band"), "Hall", 100, false, false, 100, 2, 15.0, PerformanceStatus.ACTIVE,
+        new Event(2L, "Soon Show", EventType.MUSIC, true, provider));
+    Booking soonBooking = new Booking(2L, 2, 30.0, LocalDateTime.now(), BookingStatus.ACTIVE,
+        student, soonPerformance);
+    bookings.add(soonBooking);
+
+    ScriptedView view = new ScriptedView("2", "1");
+    BookingController controller = new BookingController(view, new MockPaymentSystem(),
+        new ArrayList<>(), performances, bookings);
+    controller.setCurrentUser(student);
+
+    controller.cancelBooking();
+
+    assertTrue(
+        view.getErrorMessages().contains(
+            "ERROR: Booking cannot be cancelled less than 24 hours before the performance"),
+        "Bookings less than 24 hours away should not be cancellable.");
+    assertTrue(soonBooking.isActive(),
+        "Booking should remain active when cancellation is blocked.");
+  }
+
   // --- Refund failure ---
 
   @Test
@@ -227,5 +267,20 @@ public class CancelBookingSystemTests {
     controller.cancelBooking();
 
     assertFalse(activeBooking.isActive(), "Booking should no longer be active after cancellation.");
+  }
+
+  @Test
+  void cancelledBookingReturnsTicketsToPerformance() {
+    performance.addNumTicketsSold(activeBooking.getNumTickets());
+
+    ScriptedView view = new ScriptedView("1");
+    BookingController controller = new BookingController(view, new MockPaymentSystem(),
+        new ArrayList<>(), performances, bookings);
+    controller.setCurrentUser(student);
+
+    controller.cancelBooking();
+
+    assertTrue(performance.checkIfTicketsLeft(100),
+        "Cancelled booking should return tickets to the performance.");
   }
 }

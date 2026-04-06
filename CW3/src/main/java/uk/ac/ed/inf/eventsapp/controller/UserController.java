@@ -1,20 +1,32 @@
 package uk.ac.ed.inf.eventsapp.controller;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 import uk.ac.ed.inf.eventsapp.integration.VerificationSystem;
+import uk.ac.ed.inf.eventsapp.model.AdminStaff;
 import uk.ac.ed.inf.eventsapp.model.EntertainmentProvider;
 import uk.ac.ed.inf.eventsapp.model.Event;
 import uk.ac.ed.inf.eventsapp.model.Student;
+import uk.ac.ed.inf.eventsapp.model.StudentPreferences;
 import uk.ac.ed.inf.eventsapp.model.User;
+import uk.ac.ed.inf.eventsapp.util.InputParsers;
+import uk.ac.ed.inf.eventsapp.util.PasswordUtils;
 import uk.ac.ed.inf.eventsapp.view.View;
 
 /**
- * Handles login, logout, and provider registration.
+ * Handles login, logout, and entertainment-provider registration.
  */
 public class UserController extends Controller {
-  public static final String PREREGISTERED_USERS_FILE_PATH = "preregistered-users.csv";
-  public static final String PREREGISTERED_ADMIN_FILE_PATH = "preregistered-admin.csv";
+  public static final String PREREGISTERED_USERS_FILE_PATH =
+      "src/main/resources/preregistered-users.csv";
+  public static final String PREREGISTERED_ADMIN_FILE_PATH =
+      "src/main/resources/preregistered-admin.csv";
 
   private static final String REGISTERED_EPS_FILE_PATH = "docs/registered-eps.txt";
 
@@ -24,80 +36,135 @@ public class UserController extends Controller {
 
   public UserController(View view, VerificationSystem verificationSystem, Collection<User> users,
       Collection<Event> events) {
+    this(view, verificationSystem, users, events, true);
+  }
+
+  public UserController(View view, VerificationSystem verificationSystem, Collection<User> users,
+      Collection<Event> events, boolean loadPreregisteredUsersFromFiles) {
     super(view);
     this.verificationSystem = verificationSystem;
     this.users = users;
     this.events = events;
+    if (loadPreregisteredUsersFromFiles) {
+      addPreregisteredUsers();
+    }
   }
 
+  /**
+   * Logs in a student, admin staff member, or entertainment provider.
+   */
   public void login() {
-    if (!checkCurrentUserIsGuest()) {return;} // check current user is a guest
-
-    Scanner inputReader = new Scanner(System.in); // get input reader
-    String email = inputReader.nextLine("Enter email:");
-    String password = inputReader.nextLine("Enter password:");
-
-    if (password == null || password.isBlank()) { // password conditions
-      throw new IllegalArgumentException("password must not be blank.");
+    if (!checkCurrentUserIsGuest()) {
+      view.displayError("You are already logged in.");
+      return;
     }
 
-    for (int i = 0; i <= users.length; i++){ // go through each existing user
-      if (email == users[i].getEmail() && users[i].passwordMatches(password)){ // check if details match
-        setCurrentUser(users[i]);
+    boolean loggedIn = false;
+    while (!loggedIn) {
+      String email = view.getInput("Enter email").trim();
+      if (!InputParsers.isValidEmail(email)) {
+        view.displayError("Invalid email or password.");
+        continue;
       }
+
+      String password = view.getInput("Enter password").trim();
+      if (password.isEmpty()) {
+        view.displayError("Invalid email or password.");
+        continue;
+      }
+
+      User user = findUserByCredentials(email, password);
+      if (user == null) {
+        view.displayError("Invalid email or password.");
+        continue;
+      }
+
+      setCurrentUser(user);
+      view.displaySuccess("Login successful.");
+      loggedIn = true;
     }
-    return;
   }
 
+  /**
+   * Logs out the current user.
+   */
   public void logout() {
-    if(!checkCurrentUserIsGuest()) {setCurrentUser(null);}
-    return;
+    if (checkCurrentUserIsGuest()) {
+      view.displayError("You are not logged in.");
+      return;
+    }
+
+    setCurrentUser(null);
+    view.displaySuccess("Logout successful.");
   }
 
+  /**
+   * Registers a new entertainment provider after validating their details and business number.
+   */
   public void registerEntertainmentProvider() {
-    if(!checkCurrentUserIsGuest()){return;}
-
-    Scanner inputReader = new Scanner(System.in);
-
-    String email = inputReader.nextLine("Enter email:");
-    String password = inputReader.nextLine("Enter password:");
-    String organisationName = inputReader.nextLine("Enter your organisation's name:");
-    String businessRegistrationNumber = inputReader.nextLine("Enter your business registration number:");
-    String name = inputReader.nextLine("Enter your name:");
-    String description = inputReader.nextLine("Enter description:");
-
-    if (password == null || password.isBlank()) { // password conditions
-      throw new IllegalArgumentException("password must not be blank.");
+    if (!checkCurrentUserIsGuest()) {
+      view.displayError("You must be logged out to register.");
+      return;
     }
 
-    if(EPAccountAlreadyExists(email, organisationName, businessRegistrationNumber)){return;}
-    if(verifyEntertainmentProvider(businessRegistrationNumber)){return;}
-
-
-    EntertainmentProvider newEP = new EntertainmentProvider(email, password,
-            organisationName, businessRegistrationNumber,
-            name, description);
-
-    try (FileWriter myWriter = new FileWriter(REGISTERED_EPS_FILE_PATH, true)) {
-      myWriter.write(String.format("\n%1s, %2s, %3s, %4s, %5s, %6s", email, password, organisationName, businessRegistrationNumber, name, description));
-    } catch (IOException e) {
-      throw new IllegalArgumentException("Error occured during writing");
-    }
-
-    addUser(newEP);
-
-    return
-  }
-
-  private boolean EPAccountAlreadyExists(String email, String orgName, String businessNumber) {
-    for (int i = 0; i <= users.length; i++){ // go through each existing user
-      if(users[i] instanceof EntertainmentProvider){
-        if (email == users[i].getEmail() && orgName == users[i].getOrgName() && businessNumber == users[i].getBusinessNumber()){ // check if details match
-          return true;
-        }
+    while (true) {
+      String email = view.getInput("Enter email").trim();
+      if (!InputParsers.isValidEmail(email)) {
+        view.displayError("A valid email address is required.");
+        continue;
       }
+
+      if (emailAlreadyExists(email)) {
+        view.displayError("An account already exists for that email address.");
+        return;
+      }
+
+      String password = view.getInput("Enter password").trim();
+      if (password.isEmpty()) {
+        view.displayError("Password is required.");
+        continue;
+      }
+
+      String orgName = view.getInput("Enter your organisation's name").trim();
+      if (orgName.isEmpty()) {
+        view.displayError("Organisation name is required.");
+        continue;
+      }
+
+      String businessNumber = view.getInput("Enter your business registration number").trim();
+      if (businessNumber.isEmpty()) {
+        view.displayError("Business registration number is required.");
+        continue;
+      }
+
+      if (EPAccountAlreadyExists(orgName, businessNumber)) {
+        view.displayError("An account already exists for that entertainment provider.");
+        return; // exit
+      }
+
+      String contactName = view.getInput("Enter your name").trim();
+      if (contactName.isEmpty()) {
+        view.displayError("Main contact name is required.");
+        continue;
+      }
+
+      String description = view.getInput("Enter description").trim();
+      if (description.isEmpty()) {
+        view.displayError("Description is required.");
+        continue;
+      }
+
+      if (!verificationSystem.verifyEntertainmentProvider(businessNumber)) {
+        view.displayError("Business registration number could not be verified.");
+        return; // exit
+      }
+
+      EntertainmentProvider newProvider = new EntertainmentProvider(email, password, orgName,
+          businessNumber, contactName, description);
+      addUser(newProvider);
+      view.displaySuccess("Registration successful.");
+      return;
     }
-    return false;
   }
 
   public void editPreferences() {
@@ -105,67 +172,178 @@ public class UserController extends Controller {
       view.displayError("Only students can edit preferences.");
       return;
     }
+
     Student student = (Student) getCurrentUser();
     boolean updated = false;
     while (!updated) {
       String input = view.getInput(
-          "Enter preferences (5 digits, 1=yes, 0=no, order: Music Theater Dance Movie Sport)");
+          "Enter up to 3 preferred event types separated by commas (music, theatre, dance, movie, sports). Leave blank for none");
       updated = student.getPreferences().updatePreferences(input);
       if (!updated) {
-        view.displayError("Invalid input. Enter exactly 5 characters using only 0 and 1.");
+        view.displayError("Invalid input. Enter up to 3 unique event types separated by commas.");
       }
     }
+
     view.displaySuccess("Preferences updated successfully.");
   }
 
+  private boolean EPAccountAlreadyExists(String orgName, String businessNumber) {
+    for (User user : users) {
+      if (!(user instanceof EntertainmentProvider provider)) {
+        continue;
+      }
+
+      if (providerRepresentsSameOrganisation(provider, orgName, businessNumber)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private boolean emailAlreadyExists(String email) {
+    for (User user : users) {
+      if (user.getEmail().equals(email)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private User findUserByCredentials(String email, String password) {
+    for (User user : users) {
+      if (user.getEmail().equals(email) && user.passwordMatches(password)) {
+        return user;
+      }
+    }
+    return null;
+  }
+
   private void addUser(User user) {
-    users.add(user);
+    if (!emailAlreadyExists(user.getEmail())) {
+      users.add(user);
+    }
   }
 
   private void addPreregisteredUsers() {
-    try {
-      List<String> parsedStudentRecords = Files.readAllLines(PREREGISTERED_USERS_FILE_PATH, StandardCharsets.UTF_8)
-              .stream().map(String::trim).filter(line -> !line.isEmpty() && !line.startsWith("#"))
-              .map(this::parseFacultyRecord).filter(Objects::nonNull).toList();
+    loadStudentsFromFile();
+    loadAdminsFromFile();
+  }
 
-      List<String> parsedAdminRecords = Files.readAllLines(PREREGISTERED_ADMIN_FILE_PATH, StandardCharsets.UTF_8)
-              .stream().map(String::trim).filter(line -> !line.isEmpty() && !line.startsWith("#"))
-              .map(this::parseFacultyRecord).filter(Objects::nonNull).toList();
-
-      List<String> parsedEPRecords = Files.readAllLines(REGISTERED_EPS_FILE_PATH, StandardCharsets.UTF_8)
-              .stream().map(String::trim).filter(line -> !line.isEmpty() && !line.startsWith("#"))
-              .map(this::parseFacultyRecord).filter(Objects::nonNull).toList();
-
-      for (int i = 0; i <= parsedStudentRecords.length; i++) {
-        addUser(new Student(parsedStudentRecords(parsedRecord[i][0], parsedStudentRecords[i][1]])))
-      }
-      for (int i = 0; i <= parsedAdminRecords.length; i++) {
-        addUser(new AdminStaff(parsedAdminRecords(parsedRecord[i][0], parsedAdminRecords[i][1], parsedAdminRecords[i][2)))
-      }
-      for (int i = 0; i <= parsedEPRecords.length; i++) {
-        addUser(new EntertainmentProvider(parsedEPRecords(parsedRecord[i][0], parsedEPRecords[i][1],
-                parsedEPRecords[i][2], parsedEPRecords[i][3],
-                parsedEPRecords[i][4], parsedEPRecords[i][5])))
-      }
+  private void loadStudentsFromFile() {
+    Path studentsPath =
+        firstExistingPath(PREREGISTERED_USERS_FILE_PATH, "CW3/" + PREREGISTERED_USERS_FILE_PATH);
+    if (studentsPath == null) {
       return;
+    }
+
+    for (String[] fields : readDelimitedRecords(studentsPath)) {
+      Student student = createStudent(fields);
+      if (student != null) {
+        addUser(student);
+      }
+    }
+  }
+
+  private void loadAdminsFromFile() {
+    Path adminPath =
+        firstExistingPath(PREREGISTERED_ADMIN_FILE_PATH, "CW3/" + PREREGISTERED_ADMIN_FILE_PATH);
+    if (adminPath == null) {
+      return;
+    }
+
+    for (String[] fields : readDelimitedRecords(adminPath)) {
+      AdminStaff admin = createAdmin(fields);
+      if (admin != null) {
+        addUser(admin);
+      }
+    }
+  }
+
+  private List<String[]> readDelimitedRecords(Path path) {
+    try {
+      return Files.readAllLines(path, StandardCharsets.UTF_8).stream().map(String::trim)
+          .filter(line -> !line.isEmpty() && !line.startsWith("#")).map(line -> line.split(","))
+          .filter(Objects::nonNull).toList();
     } catch (IOException exception) {
-    throw new IllegalStateException("Unable to read user preregistration file.", exception);
+      throw new IllegalStateException("Unable to read preregistration data from " + path + ".",
+          exception);
+    }
+  }
+
+  private Path firstExistingPath(String... candidates) {
+    for (String candidate : candidates) {
+      Path path = Path.of(candidate);
+      if (Files.exists(path)) {
+        return path;
+      }
+    }
+    return null;
+  }
+
+  private Student createStudent(String[] fields) {
+    if (fields.length < 4) {
+      return null;
+    }
+
+    if (!PasswordUtils.isStoredPasswordHash(fields[1].trim())) {
+      return null;
+    }
+
+    Integer phoneNumber = InputParsers.parsePhoneNumber(fields[3]);
+    if (phoneNumber == null) {
+      return null;
+    }
+
+    StudentPreferences preferences = new StudentPreferences();
+    if (fields.length > 4) {
+      preferences.updatePreferences(fields[4].trim());
+    }
+
+    return new Student(fields[0].trim(), fields[1].trim(), fields[2].trim(), phoneNumber,
+        preferences);
+  }
+
+  private AdminStaff createAdmin(String[] fields) {
+    if (fields.length < 3) {
+      return null;
+    }
+
+    if (!PasswordUtils.isStoredPasswordHash(fields[1].trim())) {
+      return null;
+    }
+
+    return new AdminStaff(fields[0].trim(), fields[1].trim(), fields[2].trim());
+  }
+
+  private boolean providerRepresentsSameOrganisation(EntertainmentProvider provider, String orgName,
+      String businessNumber) {
+    return provider.getBusinessNumber().equals(businessNumber)
+        || (provider.getOrgName().equals(orgName)
+            && provider.getBusinessNumber().equals(businessNumber));
   }
 
   private EntertainmentProvider getEntertainmentProviderOwningEvent(long eventNumber) {
-    throw new UnsupportedOperationException(
-        "getEntertainmentProviderOwningEvent is not implemented yet.");
-  }
+    for (Event event : events) {
+      if (event.getEventID() != eventNumber) {
+        continue;
+      }
 
-  public VerificationSystem getVerificationSystem() {
-    return verificationSystem;
-  }
+      String organiserEmail = event.getOrganiserEmail();
+      if (organiserEmail == null) {
+        return null;
+      }
 
-  public Collection<User> getUsers() {
-    return users;
-  }
+      for (User user : users) {
+        if (user instanceof EntertainmentProvider provider
+            && organiserEmail.equals(provider.getEmail())) {
+          return provider;
+        }
+      }
 
-  public Collection<Event> getEvents() {
-    return events;
+      return null;
+    }
+
+    return null;
   }
 }

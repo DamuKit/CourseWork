@@ -68,8 +68,8 @@ public class CreateEventSystemTests {
   void registeredProviderCanCreateAnEventWithMultiplePerformances() {
     ScriptedView view =
         createView("Spring Concert", "music", "yes", "2", "2026-05-10 19:00", "2026-05-10 21:00",
-            "Alice, Bob", "McEwan Hall", "500", "no", "no", "250", "15.50", "2026-05-11 19:00",
-            "2026-05-11 21:00", "Alice, Bob", "McEwan Hall", "500", "no", "no", "250", "15.50");
+            "Hagan, Bob", "McEwan Hall", "500", "no", "no", "250", "15.50", "2026-05-11 19:00",
+            "2026-05-11 21:00", "Hagan, Bob", "McEwan Hall", "500", "no", "no", "250", "15.50");
     EventPerformanceController controller = controllerForProvider(view);
 
     Event createdEvent = controller.createEvent();
@@ -218,8 +218,8 @@ public class CreateEventSystemTests {
   void duplicatePerformanceTimesWithinTheSameEventAreRejected() {
     ScriptedView view =
         createView("Spring Concert", "music", "yes", "2", "2026-05-10 19:00", "2026-05-10 21:00",
-            "Alice, Bob", "McEwan Hall", "500", "no", "no", "250", "15.50", "2026-05-10 19:00",
-            "2026-05-10 21:00", "Alice, Bob", "McEwan Hall", "500", "no", "no", "250", "15.50");
+            "Hagan, Bob", "McEwan Hall", "500", "no", "no", "250", "15.50", "2026-05-10 19:00",
+            "2026-05-10 21:00", "Hagan, Bob", "McEwan Hall", "500", "no", "no", "250", "15.50");
     EventPerformanceController controller = controllerForProvider(view);
 
     Event createdEvent = controller.createEvent();
@@ -256,11 +256,11 @@ public class CreateEventSystemTests {
 
   private String[] ticketedInputs() {
     return new String[] {"Spring Concert", "music", "yes", "1", "2026-05-10 19:00",
-        "2026-05-10 21:00", "Alice, Bob", "McEwan Hall", "500", "no", "no", "250", "15.50"};
+        "2026-05-10 21:00", "Hagan, Bob", "McEwan Hall", "500", "no", "no", "250", "15.50"};
   }
 
   private String[] nonTicketedInputs() {
     return new String[] {"Campus Drama", "theatre", "no", "1", "2026-05-10 19:00",
-        "2026-05-10 21:00", "Alice, Bob", "Bedlam Theatre", "120", "no", "no"};
+        "2026-05-10 21:00", "Hagan, Bob", "Bedlam Theatre", "120", "no", "no"};
   }
 }

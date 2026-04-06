@@ -1,16 +1,29 @@
 package uk.ac.ed.inf.eventsapp.system;
 
-import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import external.MockPaymentSystem;
 import external.PaymentSystem;
 import uk.ac.ed.inf.eventsapp.controller.EventPerformanceController;
-import uk.ac.ed.inf.eventsapp.model.*;
+import uk.ac.ed.inf.eventsapp.model.Booking;
+import uk.ac.ed.inf.eventsapp.model.BookingStatus;
+import uk.ac.ed.inf.eventsapp.model.EntertainmentProvider;
+import uk.ac.ed.inf.eventsapp.model.Event;
+import uk.ac.ed.inf.eventsapp.model.EventType;
+import uk.ac.ed.inf.eventsapp.model.Performance;
+import uk.ac.ed.inf.eventsapp.model.PerformanceStatus;
+import uk.ac.ed.inf.eventsapp.model.Student;
+import uk.ac.ed.inf.eventsapp.model.StudentPreferences;
 
 public class CancelPerformanceSystemTests {
   private EntertainmentProvider provider;
@@ -20,11 +33,12 @@ public class CancelPerformanceSystemTests {
   private Collection<Performance> performances;
 
   @BeforeEach
+  @SuppressWarnings("unused")
   void setUp() {
     provider = new EntertainmentProvider("provider@gmail.com", "password", "EooEle", "123",
         "Provider", "This is EooEle");
     student =
-        new Student("student@ed.ac.uk", "password", "Alice", 1234567, new StudentPreferences());
+        new Student("student@ed.ac.uk", "password", "Hagan", 1234567, new StudentPreferences());
 
     LocalDateTime start = LocalDateTime.now().plusDays(7);
     event = new Event(1L, "Live Music", EventType.MUSIC, true, provider);
@@ -63,6 +77,25 @@ public class CancelPerformanceSystemTests {
 
     assertEquals("SUCCESS: Cancellation Successful!", view.getLastSuccessMessage(),
         "Cancellation with active bookings should succeed after refunds.");
+  }
+
+  @Test
+  void emptyCancellationMessageIsRejectedAndRetried() {
+    Booking activeBooking = new Booking(1L, 2, 30.0, LocalDateTime.now(), BookingStatus.ACTIVE,
+        student, futurePerformance);
+    futurePerformance.addBooking(activeBooking);
+
+    ScriptedView view = new ScriptedView("1", "", "Sorry for the inconvenience");
+    EventPerformanceController controller = new EventPerformanceController(view, new ArrayList<>(),
+        performances, new MockPaymentSystem());
+    controller.setCurrentUser(provider);
+
+    controller.cancelPerformance();
+
+    assertTrue(view.getErrorMessages().contains("ERROR: Cancellation message is required."),
+        "Empty cancellation message should show an error.");
+    assertEquals("SUCCESS: Cancellation Successful!", view.getLastSuccessMessage(),
+        "Valid retry should allow performance cancellation to succeed.");
   }
 
   @Test
@@ -226,6 +259,76 @@ public class CancelPerformanceSystemTests {
         "Failed refund should prevent performance cancellation.");
     assertNull(view.getLastSuccessMessage(),
         "No success message should be shown when refund fails.");
+  }
+
+  @Test
+  void missingBookingDetailsForRefundShowsError() {
+    Performance performanceWithMissingRefundDetails = new Performance(4L,
+        LocalDateTime.now().plusDays(7), LocalDateTime.now().plusDays(7).plusHours(2),
+        List.of("Band"), "Hall", 100, false, false, 100, 0, 15.0, PerformanceStatus.ACTIVE, event) {
+      @Override
+      public boolean hasActiveBookings() {
+        return true;
+      }
+
+      @Override
+      public Collection<Booking> getActiveBookings() {
+        return List.of(
+            new Booking(10L, 1, 15.0, LocalDateTime.now(), BookingStatus.ACTIVE, student, this));
+      }
+
+      @Override
+      public String getBookingDetailsForRefund() {
+        return "";
+      }
+    };
+    performances.add(performanceWithMissingRefundDetails);
+
+    ScriptedView view = new ScriptedView("4", "Event cancelled");
+    EventPerformanceController controller = new EventPerformanceController(view, new ArrayList<>(),
+        performances, new MockPaymentSystem());
+    controller.setCurrentUser(provider);
+
+    controller.cancelPerformance();
+
+    assertEquals("ERROR: There are no active booking details available for refund.",
+        view.getLastErrorMessage(),
+        "Missing refund details should block performance cancellation.");
+  }
+
+  @Test
+  void inconsistentBookingDetailsForRefundShowError() {
+    Performance performanceWithBadRefundDetails = new Performance(5L,
+        LocalDateTime.now().plusDays(7), LocalDateTime.now().plusDays(7).plusHours(2),
+        List.of("Band"), "Hall", 100, false, false, 100, 0, 15.0, PerformanceStatus.ACTIVE, event) {
+      @Override
+      public boolean hasActiveBookings() {
+        return true;
+      }
+
+      @Override
+      public Collection<Booking> getActiveBookings() {
+        return List.of(
+            new Booking(11L, 1, 15.0, LocalDateTime.now(), BookingStatus.ACTIVE, student, this));
+      }
+
+      @Override
+      public String getBookingDetailsForRefund() {
+        return "bad-refund-details";
+      }
+    };
+    performances.add(performanceWithBadRefundDetails);
+
+    ScriptedView view = new ScriptedView("5", "Event cancelled");
+    EventPerformanceController controller = new EventPerformanceController(view, new ArrayList<>(),
+        performances, new MockPaymentSystem());
+    controller.setCurrentUser(provider);
+
+    controller.cancelPerformance();
+
+    assertEquals("ERROR: Active booking refund details are inconsistent.",
+        view.getLastErrorMessage(),
+        "Malformed refund details should block performance cancellation.");
   }
 
   @Test

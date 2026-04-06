@@ -51,8 +51,8 @@ public class SearchPerformancesSystemTests {
     ScriptedView view = new ScriptedView("2026-05-10");
     EventPerformanceController controller =
         new EventPerformanceController(view, events, performances, new MockPaymentSystem());
-    controller.setCurrentUser(new Student("student@example.com", "secret", "XXXXRT", 123456789,
-        new StudentPreferences()));
+    controller.setCurrentUser(
+        new Student("student@ed.ac.uk", "secret", "XXXXRT", 123456789, new StudentPreferences()));
 
     controller.searchforPerformances();
 
@@ -100,7 +100,7 @@ public class SearchPerformancesSystemTests {
     ScriptedView view = new ScriptedView("2026-05-10");
     EventPerformanceController controller =
         new EventPerformanceController(view, events, performances, new MockPaymentSystem());
-    controller.setCurrentUser(new Student("student@example.com", "secret", "XXXXRT", 123456789,
+    controller.setCurrentUser(new Student("student@ed.ac.uk", "secret", "XXXXRT", 123456789,
         new StudentPreferences(true, false, false, false, false)));
 
     controller.searchforPerformances();
@@ -125,7 +125,7 @@ public class SearchPerformancesSystemTests {
     ScriptedView view = new ScriptedView("2026-05-10");
     EventPerformanceController controller =
         new EventPerformanceController(view, events, performances, new MockPaymentSystem());
-    controller.setCurrentUser(new Student("student@example.com", "secret", "XXXXRT", 123456789,
+    controller.setCurrentUser(new Student("student@ed.ac.uk", "secret", "XXXXRT", 123456789,
         new StudentPreferences(false, false, false, false, false)));
 
     controller.searchforPerformances();
@@ -139,17 +139,21 @@ public class SearchPerformancesSystemTests {
   }
 
   @Test
-  void invalidDateFormatShowsAnErrorMessage() {
-    ScriptedView view = new ScriptedView("10-05-2026");
+  void invalidDateFormatShowsAnErrorMessageAndRequiresDateAgain() {
+    events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
+        LocalDateTime.of(2026, 5, 10, 19, 0), LocalDateTime.of(2026, 5, 10, 21, 0), "McEwan Hall"));
+
+    ScriptedView view = new ScriptedView("10-05-2026", "2026-05-10");
     EventPerformanceController controller =
         new EventPerformanceController(view, events, performances, new MockPaymentSystem());
-    controller.setCurrentUser(new Student("student@example.com", "secret", "XXXXRT", 123456789,
-        new StudentPreferences()));
+    controller.setCurrentUser(
+        new Student("student@ed.ac.uk", "secret", "XXXXRT", 123456789, new StudentPreferences()));
 
     controller.searchforPerformances();
 
-    assertEquals("ERROR: Date format is invalid. Use yyyy-MM-dd.", view.getLastErrorMessage());
-    assertTrue(view.getLastDisplayedPerformanceList().isEmpty());
+    assertTrue(view.getErrorMessages().contains("ERROR: Date format is invalid. Use yyyy-MM-dd."));
+    assertEquals(1, view.getLastDisplayedPerformanceList().size());
+    assertTrue(view.getLastDisplayedPerformanceList().iterator().next().contains("Spring Concert"));
   }
 
   @Test
@@ -160,8 +164,8 @@ public class SearchPerformancesSystemTests {
     ScriptedView view = new ScriptedView("2026-05-11");
     EventPerformanceController controller =
         new EventPerformanceController(view, events, performances, new MockPaymentSystem());
-    controller.setCurrentUser(new Student("student@example.com", "secret", "XXXXRT", 123456789,
-        new StudentPreferences()));
+    controller.setCurrentUser(
+        new Student("student@ed.ac.uk", "secret", "XXXXRT", 123456789, new StudentPreferences()));
 
     controller.searchforPerformances();
 
@@ -183,8 +187,8 @@ public class SearchPerformancesSystemTests {
     ScriptedView view = new ScriptedView("2026-05-10");
     EventPerformanceController controller =
         new EventPerformanceController(view, events, performances, new MockPaymentSystem());
-    controller.setCurrentUser(new Student("student@example.com", "secret", "XXXXRT", 123456789,
-        new StudentPreferences()));
+    controller.setCurrentUser(
+        new Student("student@ed.ac.uk", "secret", "XXXXRT", 123456789, new StudentPreferences()));
 
     controller.searchforPerformances();
 
